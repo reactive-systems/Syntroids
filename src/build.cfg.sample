@@ -29,12 +29,15 @@ ICEPROG=iceprog
 ICOPROG=icoprog
 
 # https://github.com/reactive-systems/tsltools
+# path to the folder containing all tsltools executables
 TSLTOOLS=tsltools
 
 # https://strix.model.in.tum.de/
+# path to strix executable
 STRIX=strix
 
 # https://github.com/reactive-systems/bosy
+# path to bosy executable
 BOSY=bosy
 
 ###############################################################################

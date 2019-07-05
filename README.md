@@ -4,7 +4,7 @@ A [game](https://www.react.uni-saarland.de/publications/GHKF19.pdf) synthesized 
 ## Requirements
 
 ### TSL-tools
-You need the TSL-toolchain to convert TSL-specifications into the TLSF-format and to convert the control flow model to code of a [FRP-framework](https://www.react.uni-saarland.de/publications/FKPS19b.pdf).
+You need the TSL-toolchain to convert TSL specifications to the Temporal Logic Synthesis Format (TLSF) and to convert the control flow model to code of a [FRP-framework](https://www.react.uni-saarland.de/publications/FKPS19b.pdf).
 - https://github.com/reactive-systems/tsltools
 
 ### Synthesis tool
@@ -40,3 +40,12 @@ You need the IceStorm tools.
 #### Icotools
 You need the icoprog programming tool for IcoBoards.
 - https://github.com/cliffordwolf/icotools
+
+## Usage
+We include a [Makefile](src/specifications/Makefile), be sure to configure a [build.cfg](src/build.cfg.sample). It features the following functionality:
+- `make tlsf` converts all TSL specifications to TLSF
+- `make check` executes `tslcheck` on all TSL specifications 
+- `make <filename>.aag` synthsizes the specification `<filename>.tsl` using strix
+- `make strix/<filename>.hs` generates corresponding Clash code, plus the above if not already synthesized
+- `make <filename>.bosy` synthsizes the specification `<filename>.tsl` using bosy
+- `make bosy/<filename>.hs` generates corresponding Clash code, plus the above if not already synthesized
