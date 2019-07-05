@@ -1,0 +1,94 @@
+/**** Gamemodule specification ****
+    Description:
+        This module manages the drawing on the led matrix. It therefore has too comunicate with a video memory. It also
+        manages the writing into this viedo memory.
+    Inputs:
+        - "write"
+        - "xcoordinate", "ycoordinate"
+        - "writecolor"
+        - "ramout", interface to the video memory, is the requested value  
+    Outputs:
+        - "color", the color requested by the x-coordinate and y-coordinate 
+        - "rampos", interface to the video memory, indicates where to read from the ram
+        - "ramwrite", interface to the video memory, indicates what to write to the ram 
+        - "color1", "color2", "coordy", "bufferPin", "driverPin", "extclock", pins to comunicate with the led matrix
+    Functions:
+        - "rampos1", "rampos2", "ramposR", calculates the (linear) position int the video memory given specific coordinates
+        - "writeram", convertes a color value to a value indicating the ram to write this
+    Constants:
+       - "writeramnone", value indicating that nothing should be written into the ram
+*/
+
+STEP_INC_Y      = [coordy <- incY coordy];
+STEP_INC_X      = [coordx <- incX coordx];
+RAM_WRITE       = [ramwrite <- writeram writecolor xcoordinate ycoordinate];
+NOT_RAM_WRITE   = [ramwrite <- writeramnone()];
+RAM_REQUST_1    = [rampos <- rampos1 coordx (incY coordy)];
+RAM_REQUST_2    = [rampos <- rampos2 coordx (incY coordy)];
+RAM_REQUST_R    = [rampos <- ramposR xcoordinate ycoordinate];
+
+COLOR_WRITE_1   = [color1 <- ramout]; 
+COLOR_WRITE_2   = [color2 <- ramout]; 
+COLOR_WRITE_R   = [color  <- ramout]; 
+CLOCK_HIGH      = [extclock <- high()];
+CLOCK_LOW       = [extclock <- low()];
+
+FREEZE_OUTPUT   = [color1 <- color1] && [color2 <- color2] && [coordx <- coordx] && [coordy <- coordy];
+
+IS_WAITING      = !(eqz waitcounter);
+WAITING         = [waitcounter <- inc waitcounter];
+
+always assume {
+    // This assumption is necessary for the ghosting-handling
+    F !IS_WAITING;
+}
+
+initially guarantee {
+    !COLOR_WRITE_1;
+    !COLOR_WRITE_2;
+    !COLOR_WRITE_R;
+    CLOCK_LOW;
+}
+
+always guarantee {
+
+    // Necessary conditions for color writing
+    (X COLOR_WRITE_1) -> RAM_REQUST_1;
+    (X COLOR_WRITE_2) -> RAM_REQUST_2;
+    (X COLOR_WRITE_R) -> RAM_REQUST_R;
+
+    // The clock has to move forward and the clock high value has to be hold due the mutual exclusion
+    F CLOCK_LOW;
+    F CLOCK_HIGH;
+//    CLOCK_LOW -> F CLOCK_HIGH; 
+//    CLOCK_HIGH -> (CLOCK_HIGH U CLOCK_LOW);   
+
+    // We want sometimes to do things  
+    F COLOR_WRITE_R;
+    F STEP_INC_X;
+
+    // Mutual exclusion: When the clock is high, the outputs shouldn't change
+    CLOCK_HIGH -> FREEZE_OUTPUT U CLOCK_LOW;
+
+    // Coordination conditions and waiting
+    CLOCK_LOW  -> (COLOR_WRITE_1 R !CLOCK_HIGH);
+    CLOCK_LOW  -> (COLOR_WRITE_2 R !CLOCK_HIGH);  
+    CLOCK_LOW  -> (STEP_INC_X R !(COLOR_WRITE_1 || COLOR_WRITE_2 || CLOCK_HIGH || RAM_REQUST_1 || RAM_REQUST_2));
+    STEP_INC_X -> X (CLOCK_HIGH R !STEP_INC_X);
+    STEP_INC_X && (eq coordx (dec sizex())) <-> STEP_INC_Y;   
+    
+    // Conditions to write into the RAM 
+    write    -> RAM_WRITE;
+    (!write) -> NOT_RAM_WRITE;
+   
+    // Conditions for the Driver and Buffer Pin
+    [bufferPin <- high()] <-> (X STEP_INC_X) && (eq coordx (dec sizex()));
+    [bufferPin <- high()] || [bufferPin <- low()];
+    [driverPin <- low()];
+
+    // Ghosting-handling rules
+    CLOCK_LOW  -> X(!STEP_INC_X U !IS_WAITING);
+    CLOCK_LOW  -> WAITING && !STEP_INC_X;
+    IS_WAITING -> WAITING;
+    WAITING    -> IS_WAITING || CLOCK_LOW;
+}

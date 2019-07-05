@@ -1,0 +1,72 @@
+/**** SensorPart specification ****
+    Description:
+        One part of the sensor module.
+        Manages reading of 6 registers, e.g. all registers of ACC (high/low: x,y,z)
+    Inputs:
+        - "spiResponse", output from readSPI submodule
+        - "startMod", command from Sensor topmodule
+    Outputs:
+        - "regManagerCmd", input for RegManager
+        - "finished", sends signal when done
+        - "spiControl", commands for readSPI submodule
+        - "sensorType", chooses which Part of the Sensor to communicate with
+    Predicates:
+        - "spiFinished", unwraps spiResponse signal
+    Functions:
+        - "setRegister", wraps register address and corresponding data
+        - "readCmd", constructor for read command
+    Constants:
+        - "readCmdNone", None command
+        - "reg1", .., "reg6", register addresses to be read
+        - "moduleType", type of the registers this module reads (ACC, GYR, MAG)
+        - "mySensorType", part of the sensor this module communicates with (ACC_GYR, MAG)
+*/
+
+START = startMod;
+
+READ_NONE  = [spiControl <- readCmdNone()];
+READ_REG_1 = [spiControl <- readCmd reg1()];
+READ_REG_2 = [spiControl <- readCmd reg2()];
+READ_REG_3 = [spiControl <- readCmd reg3()];
+READ_REG_4 = [spiControl <- readCmd reg4()];
+READ_REG_5 = [spiControl <- readCmd reg5()];
+READ_REG_6 = [spiControl <- readCmd reg6()];
+
+NO_CMD = [regManagerCmd <- noCommand()];
+SET_0 = [regManagerCmd <- setRegister moduleType() zero()  spiResponse];
+SET_1 = [regManagerCmd <- setRegister moduleType() one()   spiResponse];
+SET_2 = [regManagerCmd <- setRegister moduleType() two()   spiResponse];
+SET_3 = [regManagerCmd <- setRegister moduleType() three() spiResponse];
+SET_4 = [regManagerCmd <- setRegister moduleType() four()  spiResponse];
+SET_5 = [regManagerCmd <- setRegister moduleType() five()  spiResponse];
+
+ANSWER = spiFinished spiResponse;
+
+IDLE  = START R (READ_NONE && (START -> X READ_REG_1));
+
+initially guarantee {
+    IDLE;
+    READ_REG_6 R [finished <- bot()]
+}
+
+always guarantee {
+    READ_NONE || READ_REG_1 || READ_REG_2 || READ_REG_3 || READ_REG_4 || READ_REG_5 || READ_REG_6; 
+    SET_0 || SET_1 || SET_2 || SET_3 || SET_4 || SET_5 || NO_CMD;
+    
+    READ_REG_1 -> X (ANSWER R ((ANSWER -> READ_REG_2) && (!ANSWER -> READ_NONE)));
+    READ_REG_2 -> X (ANSWER R ((ANSWER -> READ_REG_3) && (!ANSWER -> READ_NONE)));
+    READ_REG_3 -> X (ANSWER R ((ANSWER -> READ_REG_4) && (!ANSWER -> READ_NONE)));
+    READ_REG_4 -> X (ANSWER R ((ANSWER -> READ_REG_5) && (!ANSWER -> READ_NONE)));
+    READ_REG_5 -> X (ANSWER R ((ANSWER -> READ_REG_6) && (!ANSWER -> READ_NONE)));
+    READ_REG_6 -> X (ANSWER R ((ANSWER -> IDLE)       && (!ANSWER -> READ_NONE) && (ANSWER <-> [finished <- top()]))); 
+    [finished <- top()] -> X (READ_REG_6 R [finished <- bot()]);
+ 
+    READ_REG_2 <-> SET_0; 
+    READ_REG_3 <-> SET_1; 
+    READ_REG_4 <-> SET_2; 
+    READ_REG_5 <-> SET_3; 
+    READ_REG_6 <-> SET_4; 
+    [finished <- top()] <-> SET_5;
+    
+    [sensorType <- mySensorType()];
+}

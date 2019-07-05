@@ -1,0 +1,33 @@
+/**** Sensorselector specification ****
+    Description:
+        This module manages the passthrough of the spi communication and the selection of the right chipselect.
+    Inputs:
+        - "sensorType", the part of the sensorType we want to coummnicate with
+        -"sdiIn", "spcIn", "csIn", sensorType pins but one chip select
+    Outputs:
+        - "sdiOut", "spcOut", "csAltOut", "csMagOut", "csAGOut", the full ranges of sensorType pins
+    Predicates:
+        - "isalt", "isMag", "isAccGyro", "isNone", check if sensorType is in the specifiy mode or not
+*/
+
+always assume {
+    //sensorTypetypes are distinct
+    isAlt sensorType -> !(isNone sensorType || isMag sensorType || isAccGyro sensorType);
+    isMag sensorType -> !(isNone sensorType || isAlt sensorType || isAccGyro sensorType);
+    isAccGyro sensorType -> !(isNone sensorType || isMag sensorType || isAlt sensorType);
+    isNone sensorType -> !(isAlt sensorType || isMag sensorType || isAccGyro sensorType);
+}
+
+DEFAULT_OUT  = [csAG <- high()] && [csAlt <- high()] && [csMag <- high()] && [spc <- high()] && [sdi <- high()];
+PASS_THROUGH = [sdi <- sdiIn] && [spc <- spcIn];
+PASS_CS_AG   = [csAG <- csIn] && [csAlt <- high()] && [csMag <- high()];
+PASS_CS_ALT  = [csAG <- high()] && [csAlt <- csIn] && [csMag <- high()];
+PASS_CS_MAG  = [csAG <- high()] && [csAlt <- high()] && [csMag <- csIn];
+REGISTER     = [csAGOut <- csAG] && [csAltOut <- csAlt] && [csMagOut <- csMag] && [sdiOut <- sdi] && [spcOut <- spc];
+always guarantee {
+    isAlt sensorType        -> PASS_CS_ALT && PASS_THROUGH;  
+    isMag sensorType        -> PASS_CS_MAG && PASS_THROUGH;  
+    isAccGyro sensorType    -> PASS_CS_AG  && PASS_THROUGH;  
+    isNone sensorType       -> DEFAULT_OUT;
+    REGISTER
+} 

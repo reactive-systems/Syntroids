@@ -1,0 +1,69 @@
+/**** SPI specification ****
+    Description:
+        This module recieves commands to either do write or read spi cycle
+        and runs these through the read/write submodules
+    Inputs:
+        "readSpiPins", "writeSpiPins", spi pins from submodules
+        "readResponse", "writeResponse", response (data) output from submodules
+        "spiControl", write or read command
+    Outputs:
+        "spiPins", spi pins output
+        "spiResponse", data output
+        "readControl", "writeControl", command outputs to submodules
+    Predicates:
+        "doRead", "doWrite", tests if command is to read/write
+        "writeFinished", "readFinished", tests if response is "finished"
+    Functions:
+        "getWriteData", "getReadData", unwraps data from submodule response
+        "readCmd", "writeCmd", forms submodulecommand from spicommand
+    Constants:
+        "defaultSpiPins", default spi pin out
+        "noResponse", none data out
+*/
+
+SPI_SET_READ_OUT    = [spiPins <- readSpiPins];
+SPI_SET_WRITE_OUT   = [spiPins <- writeSpiPins];
+SPI_IDLE            = [spiPins <- defaultSpiPins()];
+
+OUT_WRITE = [spiResponse <- makeWriteOut writeResponse lastCmd];
+OUT_READ  = [spiResponse <- makeReadOut  readResponse  lastCmd];
+OUT_NONE  = [spiResponse <- noResponse()];
+
+WRITE_CMD   = [writeControl <- writeCmd lastCmd]; 
+WRITE_NOCMD = [writeControl <- noWriteCmd()]; 
+READ_CMD    = [readControl  <- readCmd lastCmd];
+READ_NOCMD  = [readControl  <- noReadCmd()];
+SAVE_CMD    = [lastCmd <- spiControl];
+
+always assume { 
+    !(doRead spiControl && doWrite spiControl);
+    !(readFinished readResponse && writeFinished writeResponse);
+}
+
+initially guarantee {
+    (doRead spiControl || doWrite spiControl) R SPI_IDLE;
+}
+
+always guarantee { 
+    // There has to be at least one output
+    SPI_SET_READ_OUT || SPI_SET_WRITE_OUT || SPI_IDLE;  
+    
+    // If a command is recived and the spi module is idle, execute the command
+    ((doRead  spiControl || doWrite spiControl) && SPI_IDLE) <-> SAVE_CMD;
+    (doRead  spiControl && SPI_IDLE)  -> (X READ_CMD);
+    (doWrite spiControl && SPI_IDLE)  -> (X WRITE_CMD);
+    !(doRead  spiControl && SPI_IDLE) -> (X READ_NOCMD);
+    !(doWrite spiControl && SPI_IDLE) -> (X WRITE_NOCMD);
+    (doRead  spiControl && SPI_IDLE)  -> (X (readFinished  readResponse  R SPI_SET_READ_OUT));
+    (doWrite spiControl && SPI_IDLE)  -> (X (writeFinished writeResponse R SPI_SET_WRITE_OUT));
+
+    (SPI_SET_READ_OUT  && readFinished  readResponse)  -> (X ((doRead spiControl || doWrite spiControl) R SPI_IDLE));
+    (SPI_SET_WRITE_OUT && writeFinished writeResponse) -> (X ((doRead spiControl || doWrite spiControl) R SPI_IDLE));
+    
+    //safety
+    !(READ_CMD && WRITE_CMD);
+    // If data is recived is has to be outputed  
+    readFinished readResponse    <-> OUT_READ;
+    writeFinished writeResponse  <-> OUT_WRITE;
+    OUT_WRITE || OUT_READ || OUT_NONE
+}

@@ -1,0 +1,19 @@
+/**** SensorRegister specification ****
+    Description:
+        Register that hold a value until an updated value is passed over by the register manager.
+        Has one type e.g. "ACC_Y" and only accepts values of this type.
+    Inputs:
+        "regVal", currenct value of this register
+        "regType", type of current newVal 
+        "regData", updated value from register manager
+    Outputs:
+        "regVal", see inputs
+    Predicates:
+        "regCmp", equality check for registertypes
+    Constants:
+        "myType", type of this register
+*/
+
+always guarantee {
+        regCmp myType() regType <-> [regVal <- regData];
+}

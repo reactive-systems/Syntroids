@@ -1,0 +1,32 @@
+/**** SPI-write-sdi specification ****
+    Description:
+        Serial Master Out Slave In for Writing
+        Sends the address and data bits
+    Inputs:
+        "counter", "writeData", "writeAddress", from SPI write manag topmodule
+    Outputs:
+        "sdi", mosi pin of SPI write module
+    Predicates:
+        (un)equalities
+    Functions:
+        "div", div
+        "sub", substraction
+        "getBit", extracts bit n from a given byte
+    Constants:
+        numbers, "high", "low"
+*/
+
+always assume {
+    !(gte counter twentyfour()    && lte counter seventeen());
+    !(gte counter four()          && eq counter two());
+    !(gte counter twentyfour()    && eq counter two());
+    !(gte counter four()          && eq counter three());
+    !(gte counter twentyfour()    && eq counter three());
+}
+
+always guarantee {    
+    (eq counter two() || eq counter three()) -> [sdi <- low()];
+
+    (gte counter four() && lte counter seventeen()) <-> [sdi <- getBit writeAddress (sub eight() (div counter two()))];
+    (gte counter twentyfour() && lte counter thirtynine()) <-> [sdi <- getBit writeData (sub nineteen() (div counter two()))];
+}

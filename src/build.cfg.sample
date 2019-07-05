@@ -1,0 +1,40 @@
+#
+# Copy this file to 'build.cfg' first, i.e.:
+#
+#   cp build.cfg.sample build.cfg
+#
+# Then adapt the configuration according to you local setup.
+#
+###############################################################################
+
+# http://www.clash.lang
+CLASH=clash
+
+# https://github.com/cliffordwolf/yosys
+YOSYS=yosys
+
+# https://github.com/cseed/arachne-pnr
+ARACHNEPNR=arachne-pnr
+
+# https://github.com/YosysHQ/nextpnr
+NEXTPNR=nextpnr
+
+# https://github.com/cliffordwolf/icestorm/tree/master/icepack
+ICEPACK=icepack
+
+# https://github.com/cliffordwolf/icestorm/tree/master/iceprog
+ICEPROG=iceprog
+
+# https://github.com/cliffordwolf/icotools/tree/master/icoprog
+ICOPROG=icoprog
+
+# https://github.com/reactive-systems/tsltools
+TSLTOOLS=tsltools
+
+# https://strix.model.in.tum.de/
+STRIX=strix
+
+# https://github.com/reactive-systems/bosy
+BOSY=bosy
+
+###############################################################################

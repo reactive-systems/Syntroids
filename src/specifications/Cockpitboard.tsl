@@ -1,0 +1,50 @@
+/**** Cockpitboard specification ****
+    Description:
+        This module generates the cockpit view of the game.  
+    Inputs:
+        - "enemies", the data of all enmies
+        - "rotation",  rotation of the spaceship i.e the player
+    Outputs:
+        - "bxcoord"
+        - "bycoord"
+        - "color"
+    Predicates:
+        - "hitcoord", check if a cartesian coordinate matches a polar coordinate turned by a certain offset (the players rotation)
+    Functions:
+        - "getenemyangle", this function extracts, given an enemy-index, the angle of an enemy 
+        - "getenemyradius", this function extracts, given an enemy-index, the radius of an enemy
+        - "getenemycolor", this function extracts, given an enemy-index, the color of an enemy
+    Constants:
+        - "enemycount", the number of enmies
+        - "startradius", radius the enmies start with
+        - "blackcolor", "whitecolor", color values for black and white
+        - "hairlinex", "hairliney", coordinates of the hairline cross    
+*/
+
+ACT_RADIUS      = getenemyradius enemies (dec counter);
+ACT_COLOR       = getenemycolor  enemies (dec counter);
+ACT_ANGLE       = getenemyangle  enemies (dec counter);
+HIT_COORDINATE  = hitcoord xcoord ycoord ACT_RADIUS ACT_ANGLE rotation;
+IS_HAIRLINECROSS = eq xcoord  hairlinex() && eq ycoord hairliney();
+
+always guarantee { 
+    // Cyclic counter 
+    //  0 : writing the point
+    //  1 - enemycount: cycluing throgh the enmies
+    [counter <- incmod counter (inc enemycount())]; 
+    eqz counter                           <-> [xcoord <- incCoord xcoord];
+    eq xcoord   decSizeX() && eqz counter <-> [ycoord <- incCoord ycoord];
+    
+    // Check for coordinate hit 
+    !(eqz counter) && (lt ACT_RADIUS tmpdist) && HIT_COORDINATE <-> [tmpcolor <- ACT_COLOR];
+    !(eqz counter) && (lt ACT_RADIUS tmpdist) && HIT_COORDINATE <-> [tmpdist  <- ACT_RADIUS];
+
+    // Update the output
+    eqz counter <-> [color <- tmpcolor] || [color <- whitecolor()];
+    eqz counter <-> [tmpcolor <- blackcolor()];
+    eqz counter <-> [tmpdist <- startradius()];
+    eqz counter <-> [bxcoord <- xcoord];
+    eqz counter <-> [bycoord <- ycoord];
+    [color <- whitecolor()] ->  IS_HAIRLINECROSS;
+    [color <- tmpcolor]     -> !IS_HAIRLINECROSS;
+}

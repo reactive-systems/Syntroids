@@ -1,0 +1,43 @@
+/**** Scoreboard specification ****
+    Description:
+        This module generates the score board image.
+    Inputs:
+        - "score" 
+        - "gameover", indicates if the game is over
+        - "scorecolor", the color the score should take (normaly this should be the color of the 'most dangerous' enemy)
+    Outputs:
+        - "bxcoord"
+        - "bycoord"
+        - "actcolor"    
+    Functions:
+        - "coordcount", calculates the number/index of a given coordinate
+    Constants:
+        - "redcolor", "blackcolor", color-values of red and black  
+            
+*/
+
+// Remark: The coordinates have to be buffered
+
+COLOR_SCORE = [actcolor <- scorecolor];
+COLOR_CROSS = [actcolor <- redcolor()];
+COLOR_NONE  = [actcolor <- blackcolor()];
+IS_SCORE    = lt (coordcount xcoord ycoord) score;
+IS_CROSS    = eq (add xcoord ycoord) (dec sizex()) || (eq xcoord ycoord);
+
+always guarantee {
+   
+    // The coordinates should be outputed one step later    
+    [bxcoord <- xcoord];
+    [bycoord <- ycoord];
+
+    // Coordinates
+    [xcoord <- inc xcoord];
+    eq xcoord (dec sizex()) <-> [ycoord <- inc ycoord];
+
+    // Liveliness
+    COLOR_SCORE || COLOR_CROSS || COLOR_NONE;
+    
+    // actual_color
+    IS_SCORE <-> COLOR_SCORE; 
+    gameover && !IS_SCORE && IS_CROSS <-> COLOR_CROSS;
+}

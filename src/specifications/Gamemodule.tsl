@@ -1,0 +1,37 @@
+/**** Gamemodule specification ****
+    Description:
+        This module switches between the different boards output depending on the gamemmode
+        and if the game is over.
+    Inputs:
+        - "gamemode"
+        - "gameover", this value indicates if the game is over  
+        - "scoreboardpoint", "radarboardpoint", "cockpitboardpoint", output of the different boards
+    Outputs:
+        - "outpoint", one boards output which was choosen by this module
+    Predicates:
+       - "is...mode", check if the given mode corresponds to the wanted mode
+*/
+
+
+// Macros & Aliases
+SCORE_MODE   = isscoremode gamemode;
+RADAR_MODE   = isradarmode gamemode;
+COCKPIT_MODE = iscockpitmode gamemode;
+SHOW_SCORE   = [outpoint <- scoreboardpoint];
+SHOW_RADAR   = [outpoint <- radarboardpoint];
+SHOW_COCKPIT = [outpoint <- cockpitboardpoint];
+
+always assume {
+    !(SCORE_MODE && RADAR_MODE);
+    !(RADAR_MODE && COCKPIT_MODE);
+    !(COCKPIT_MODE && SCORE_MODE);
+}
+always guarantee {
+    gameover   -> SHOW_SCORE;
+    !(gameover) ->
+            (SCORE_MODE   -> SHOW_SCORE) &&
+            (RADAR_MODE   -> SHOW_RADAR) &&
+            (COCKPIT_MODE -> SHOW_COCKPIT);
+
+    SHOW_SCORE || SHOW_RADAR || SHOW_COCKPIT;
+}

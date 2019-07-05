@@ -1,0 +1,37 @@
+/**** Sensor specification ****
+    Description:
+    This module controls the sensor part/init submodules.
+    It starts a module and waits for it to be finished before starting the next module.
+    First, it starts the initialization and afterwards switches all through all reading (part) modules.
+    Inputs:
+        "xxxFinished", response from sensor part/init submodules 
+    Outputs:
+        "partControl", start commands for sensor part/init submodules
+    Constants:
+        "noCmd", "accOn", "gyrOn", "magnOn", start commands for a submodule
+*/
+ACC_ON  = [partControl <- accOn()];
+GYR_ON  = [partControl <- gyrOn()];
+MAG_ON  = [partControl <- magOn()];
+INIT_ON = [partControl <- initOn()];
+NO_CMD  = [partControl <- noCmd()];
+
+always assume {
+    ACC_ON  -> X (F accFinished);
+    GYR_ON  -> X (F gyrFinished);
+    MAG_ON  -> X (F magFinished);
+    INIT_ON -> X (F initFinished);
+}
+initially guarantee  {
+    INIT_ON;
+}
+
+always guarantee {
+    INIT_ON -> X (G (! INIT_ON));
+
+    !(INIT_ON || accFinished || gyrFinished || magFinished || initFinished) -> NO_CMD;
+    
+    F ACC_ON;
+    F GYR_ON;
+    F MAG_ON;
+}

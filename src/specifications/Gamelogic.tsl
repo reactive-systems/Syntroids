@@ -1,0 +1,96 @@
+/**** Gamelogic specification ****
+    Description:
+        This module specify the gamelogic i.e the behaviour if the game.
+    Inputs: 
+        - "enemies", the data of all enmies
+        - "gamestart", indicates tha the game should (re)start, works as a reset
+        - "rotation", value of the rotation of the player i.e the rotation of the spaceship
+        - "shot",  indicates that the player shot
+    Outputs:
+        - "gameover", indicates if the game is over
+        - "resets", the rest interface to reste the enemies  
+        - "moveticks", the movement interface to send a tick to the enmies 
+        - "score", score of the game
+        - "scorecolor", the color of the score i.e. the color of the fastest enemy
+    Predicates:
+        - "isgameover", checks given an enemy-radius if this enemy is near enough to end the game 
+        - "hitenemy", check if given an enemy-radius an enemy-angle and the players rotation if the player would hit the enemy
+    Functions:
+        - "getenemyangle", this function extracts, given an enemy-index, the angle of an enemy 
+        - "getenemyradius", this function extracts, given an enemy-index, the radius of an enemy
+        - "getenemycolor", this function extracts, given an enemy-index, the color of an enemy
+        - "triggerreset", trigger the reset, with some new random angle generator for one specific enemy
+        - "triggerresetall",  trigger the reset for all enmies (with some angle generator)
+        - "tickmove", moves (or not) the enemies (or some of them) according to the movement clock
+        - "newrand", generates pseudo-randomly an new random angle form the old
+        - "incmoveclock", changes the movement clock according to the score
+        - "fastestenemycolor", calculates the color of the fastest enemy  
+    Constants: 
+        - "triggerresetnone", trigger no enemy reset
+        - "ticknomove", don't move any enemy
+        - "enemycount", the number of enmies
+*/
+
+
+GAMEOVER = [gameover <- top()];
+GAMEON   = [gameover <- bot()];
+
+
+ENEMY_COLOR     = getenemycolor enemies counter;
+ENEMY_RADIUS    = getenemyradius enemies counter;
+ENEMY_ANGLE     = getenemyangle enemies counter;
+ENEMY_RESET     = [resets <- triggerreset counter newangle];      
+ALL_ENEMY_RESET = [resets <- triggerresetall newangle];      
+NO_ENEMY_RESET  = [resets <- triggerresetnone()];
+ALL_ENEMY_MOVE  = [moveticks <- tickmove movementclock];   
+NO_ENEMY_MOVE   = [moveticks <- ticknomove()];   
+FASTEST_ENEMY   = [scorecolor <- fastestenemycolor enemies];
+
+
+initially guarantee {
+    ALL_ENEMY_RESET;
+    GAMEON W isgameover ENEMY_RADIUS;
+}
+
+always guarantee {
+
+    // The game is always running or over
+    GAMEON || GAMEOVER;
+    // Whenever the game starts, the game starts to run until it is over 
+    // Whenever the game stops, the game is over until te game restarts
+    gamestart -> (GAMEON W isgameover ENEMY_RADIUS); 
+    X(gamestart <-> ALL_ENEMY_RESET);
+    isgameover ENEMY_RADIUS -> (GAMEOVER W gamestart);
+    // The score is set to zero if and only if the game starts   
+    gamestart <-> [score <- zeroScore()];
+
+    // Hit condition
+    X (!(gamestart) && GAMEON -> (
+        (gtz shotCounter <-> [shotCounter <- dec shotCounter]) &&
+        (gtz shotCounter && hitenemy ENEMY_ANGLE ENEMY_RADIUS rotation <-> [score <- inc score]) &&
+        (gtz shotCounter && hitenemy ENEMY_ANGLE ENEMY_RADIUS rotation <-> ENEMY_RESET)
+    ));
+
+    // Set shot counter
+    GAMEON && shot && !(gtz shotCounter) <-> [shotCounter <- enemycount()]; 
+
+    // Cyclic enemy counter
+    [counter <- incmod counter enemycount()];
+      
+    // Movement clock   
+    GAMEON -> [movementclock <- incmoveclock movementclock score];
+    GAMEON -> ALL_ENEMY_MOVE; 
+
+    // Random
+    [newangle <- newrand newangle];
+
+    //Saftey
+    GAMEOVER -> [shotCounter <- zero()];    
+    GAMEOVER -> !ALL_ENEMY_MOVE;
+    GAMEOVER && !gamestart -> [score <- score];
+    GAMEOVER -> !ENEMY_RESET;
+    X(GAMEOVER -> !ALL_ENEMY_RESET);
+    ENEMY_RESET || ALL_ENEMY_RESET || NO_ENEMY_RESET;
+    ALL_ENEMY_MOVE || NO_ENEMY_MOVE;
+    FASTEST_ENEMY; 
+}

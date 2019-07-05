@@ -1,0 +1,61 @@
+/**** SensorPart specification ****
+    Description:
+        One part of the sensor module.
+        Manages writing/initialization of 7 registers.
+    Inputs:
+        - "spiResponse", output from writeSPI submodule
+        - "startInit", command from Sensor topmodule
+    Outputs:
+        - "regManagerCmd", input for RegManager
+        - "finished", sends signal when done
+        - "spiControl", commands for SPI module
+        - "sensorType", choose which part of the sensor to communicate with
+    Predicates:
+        - "spiFinished", unwraps spiResponse signal
+    Functions:
+        - "writeCmd", constructor for write command
+    Constants:
+        - "writeCmdNone", None command
+        - "reg1", .., "reg7", register addresses and data to be written
+        - "accGyr", "mag", sensortypes to choose which part of the sensor to communicate with
+*/
+
+START = startInit;
+IDLE = (START R (START -> WRITE_REG_1)) && (WRITE_NONE W START) ;
+ANSWER = spiFinished spiResponse;
+
+WRITE_NONE  = [spiControl <- writeCmdNone()];
+WRITE_REG_1 = [spiControl <- writeCmd reg1()];
+WRITE_REG_2 = [spiControl <- writeCmd reg2()];
+WRITE_REG_3 = [spiControl <- writeCmd reg3()];
+WRITE_REG_4 = [spiControl <- writeCmd reg4()];
+WRITE_REG_5 = [spiControl <- writeCmd reg5()];
+WRITE_REG_6 = [spiControl <- writeCmd reg6()];
+WRITE_REG_7 = [spiControl <- writeCmd reg7()];
+
+ACC_GYR = [sensorType <- accGyr()];
+MAG = [sensorType <- mag()];
+
+initially guarantee {
+    IDLE;
+    WRITE_REG_7 R [finished <- bot()];
+}
+
+always guarantee {
+    WRITE_NONE || WRITE_REG_1 || WRITE_REG_2 || WRITE_REG_3 || WRITE_REG_4 || WRITE_REG_5 || WRITE_REG_6 || WRITE_REG_7; 
+
+    WRITE_REG_1  -> X (ANSWER R ((ANSWER -> WRITE_REG_2) && (!ANSWER -> WRITE_NONE)));
+    WRITE_REG_2  -> X (ANSWER R ((ANSWER -> WRITE_REG_3) && (!ANSWER -> WRITE_NONE)));
+    WRITE_REG_3  -> X (ANSWER R ((ANSWER -> WRITE_REG_4) && (!ANSWER -> WRITE_NONE)));
+    WRITE_REG_4  -> X (ANSWER R ((ANSWER -> WRITE_REG_5) && (!ANSWER -> WRITE_NONE)));
+    WRITE_REG_5  -> X (ANSWER R ((ANSWER -> WRITE_REG_6) && (!ANSWER -> WRITE_NONE)));
+    WRITE_REG_6  -> X (ANSWER R ((ANSWER -> WRITE_REG_7) && (!ANSWER -> WRITE_NONE)));
+    WRITE_REG_7  -> X (ANSWER R ((ANSWER -> IDLE)        && (!ANSWER -> WRITE_NONE) && (ANSWER <-> [finished <- top()])));
+
+    [finished <- top()] -> X (WRITE_REG_7 R [finished <- bot()]);
+    [regManagerCmd <- noCommand()];
+    
+    (WRITE_REG_1 || WRITE_REG_2 || WRITE_REG_3 || WRITE_REG_4) -> X (ANSWER R ACC_GYR);
+    (WRITE_REG_5 || WRITE_REG_6 || WRITE_REG_7) -> X (ANSWER R MAG);
+
+}

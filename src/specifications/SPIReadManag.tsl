@@ -1,0 +1,59 @@
+/**** SPI-read-manager specification ****
+    Description:
+        SPI Read TopModule, submodules: clk and sdi (to send the address)
+        Counts through the states and outputs them (counter) for submodules
+        Recieves commands to read a certain register and processes them (if available)
+    Inputs:
+        "readControl", command signal, either to read something or do nothing
+        "tempData", see Outputs
+        "prescaler", see Outputs
+    Outputs:
+        "counter", counts with prescaled speed to thirtyfour, steps through the spi cycle
+        "readAddress", register address to be read
+        "readResponse", main output: either finished signal including data or nothing
+        "tempData", temporary memory to build the recieved byte from eight bits
+        "prescaler", count to the scalingfactor limit, to prescale the counter
+        "cs", spi chip select
+    Predicates:
+        "eqz", "eq", "gt", "lt", standard compare predicates
+        "doRead", checks if input commands the module to read, false if not
+    Functions:
+        "incmod", increase by one then mod the second argument
+        "getReadAddress", extracts the register address from the input command
+        "wrapData", wraps a byte and a bool to the output signal (either data or nothing -> readResponse)
+        "customSetBit", shifts a byte by one to the left, then sets the second argument as last bit
+    Constants:
+        "scalingfactor", cycles to count, before prescaler does the next tick
+        "eighteen", start of bit reception
+        "thirtyfour", finished reception
+        "thirtyfive", last state before returning to idle
+        "thirtysix", finished spi cycle with output
+        "one", constant to start spi cycle
+        "zero", reset value for tempData
+*/
+
+always assume {
+    !(eqz counter && gt counter eighteen());
+    [counter <- one()] -> F (eq counter thirtyfour());
+}
+
+always guarantee {
+    [prescaler <- inc prescaler];
+    eqzi prescaler && !(eqz counter) <-> [counter <- incmod counter thirtysix()];
+
+    doRead readControl && eqz counter <-> [readAddress <- getReadAddress readControl];
+
+    doRead readControl && eqz counter -> ([cs <- low()] U eq counter thirtyfour());
+    F [cs <- high()];    
+    //safety
+//    !doRead readControl && eqz counter -> [cs <- high()]; 
+    eq counter thirtyfive() && eqzi prescaler <-> [readResponse <- wrapData tempData top()];
+    !(eq counter thirtyfive() && eqzi prescaler) <-> [readResponse <- wrapData tempData bot()];
+    
+    doRead readControl && eqz counter <-> [counter <- one()];
+    
+    eqz counter -> [tempData <- zero()];
+    !(eqz counter) && !(!(isEven counter) && lt counter thirtyfour() && gt counter eighteen() && eqzi prescaler) -> [tempData <- tempData];
+    (!(isEven counter) && lt counter thirtyfour() && gt counter eighteen() && eqzi prescaler) <-> [tempData <- customSetBit tempData sdo];
+    //This should only be executed ONCE every prescaling cycle
+}

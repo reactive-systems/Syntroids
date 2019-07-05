@@ -1,0 +1,26 @@
+/**** Converter specification ****
+    Description:
+        This module decides form the sensor data if the player shot and if the game should be reseted
+    Inputs:
+        - "gamemode"
+        - "gyrox", "gyroy", "gyroz", gyroscope data 
+        - "accz", accelerometer data 
+    Outputs:
+        - "gamestart"
+        - "shot"
+    Predicates:
+        - "norotation", checks if the device is not rotating (noise is discarded)
+        - "is...mode", check if the given mode corresponds to the wanted mode
+    Constants:
+        - "resetthreshhold", threshhold which has to be surpassed to trigger a reset
+        - "shotthreshhold", threshhold which has to be surpassed (as absoulte value) to trigger a shot
+*/
+
+always guarantee {
+    [gamestart <- top()] || [gamestart <- bot()];
+    [shot <- top()]  || [shot <- bot()];
+    isscoremode gamemode   && gt accz      resetthreshhold() && norotation gyrox gyroy gyroz <-> [gamestart <- top()]; 
+    iscockpitmode gamemode && gt (abs accz) shotthreshhold() && norotation gyrox gyroy gyroz <-> [shot <- top()]; 
+}
+
+

@@ -1,0 +1,27 @@
+/**** Register manager specification ****
+    Description:
+        merges two bytes to a 16 bit signed and passes this to the registers
+    Inputs:
+        - "regManagerCmd", input command with data, register and first or second half info
+        - "buffer", see outputs
+    Outputs:
+        - "regType", "regData", main outputs, 16 bit signed and registername to write it to 
+        - "buffer", internal buffer 
+    Predicates:
+        - "firsthalf", "secondhalf", tests if input is first byte or second byte
+    Functions:
+        - "extractDat", "extractReg", extract stuff from datatype
+    Constants:
+        - "regnone", empty register name
+*/
+
+always guarantee {
+firsthalf regManagerCmd <-> [buffer <- extractDat regManagerCmd];
+
+secondhalf regManagerCmd -> [regType <- extractReg regManagerCmd];
+!(secondhalf regManagerCmd) -> [regType <- regnone()];
+
+secondhalf regManagerCmd -> [regData <- mergeReg (extractDat regManagerCmd) buffer];
+!(secondhalf regManagerCmd) -> [regData <- zero()];
+
+}

@@ -1,0 +1,43 @@
+/**** Gamemodule specification ****
+    Description:
+        Coordinates the communication of the sensor-submodules (parts/Init) with registermanager and spi. The parts block the outputs and free them when finished.
+    Inputs:
+        - "startInit", "startAcc", "startGyr", "startMag", start signals from sensor topmodule
+        - "spiControlGyro", "spiControlAcc", "spiControlMag", "spiControl", spiControls from sensor parts 
+        - "regManagerCmdGyro", "regManagerCmdAcc", "regManagerCmdMag", "regManagerCmdInit", register control signals from sensorparts
+        - "sensorTypeAcc", ..., "sensorTypeMag", sensorTypes from sensor parts
+    Outputs:
+        - "spiControl", SPI spiControl
+        - "regManagerCmd", register manager control
+        - "sensorType", module selection signal for SensorSelector (to choose the right chipselect)
+*/
+
+/* IDEA: Global view the spiControl dont do bad things, even if the module is inactive */
+INIT = startInit;
+ACC  = startAcc;
+GYR  = startGyr;
+MAG  = startMag;
+NEW  = INIT || ACC || GYR || MAG;
+PIPE_INIT = [spiControl <- spiControlInit] && [regManagerCmd <- regManagerCmdInit] && [sensorType <- sensorTypeInit];
+PIPE_ACC  = [spiControl <- spiControlAcc]  && [regManagerCmd <- regManagerCmdAcc]  && [sensorType <- sensorTypeAcc];
+PIPE_GYR  = [spiControl <- spiControlGyr]  && [regManagerCmd <- regManagerCmdGyr]  && [sensorType <- sensorTypeGyr];
+PIPE_MAG  = [spiControl <- spiControlMag]  && [regManagerCmd <- regManagerCmdMag]  && [sensorType <- sensorTypeMag];
+
+always assume {
+    !(ACC && GYR);
+    !(ACC && MAG);
+    !(MAG && GYR);
+    !(INIT && GYR);
+    !(INIT && ACC);
+    !(INIT && MAG);
+    
+
+}
+
+always guarantee {
+    PIPE_INIT || PIPE_ACC || PIPE_GYR || PIPE_MAG;
+    INIT -> (PIPE_INIT && (X (PIPE_INIT W NEW)));
+    ACC  -> (PIPE_ACC  && (X (PIPE_ACC  W NEW)));
+    GYR  -> (PIPE_GYR  && (X (PIPE_GYR  W NEW)));
+    MAG  -> (PIPE_MAG  && (X (PIPE_MAG  W NEW)));
+}

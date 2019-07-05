@@ -1,0 +1,44 @@
+/**** GamemodeChooser specification ****
+    Description:
+        This module chooses th gamemmode according to the senor output
+    Inputs:
+        - "gyroy"
+    Outputs:
+        - "gamemode" 
+    Predicates:
+        - "gamemodenoise", check if the given rotation is noise or not  
+        - "gyronoise", test if the given gryroscope data is noise
+        - "is...mode", check if the given mode corresponds to the wanted mode
+    Functions:
+        - "addrotation", updates the rotation value, respecting direction, correction and size of the data
+    Constants:
+        - "gyrocorrection", correction value of the gyrosocop
+        - "gamemodeswitch", rotation treshhold when the gamemode is switched
+        - "radarmode", "cockpitmode", "scoremode", different gamemodes
+*/
+
+RADARMODE = [gamemode <- radarmode()];
+COCKPITMODE = [gamemode <- cockpitmode()];
+SCOREMODE = [gamemode <- scoremode()]; 
+
+
+RESET_CONDITION =  RADARMODE || COCKPITMODE || SCOREMODE || (eqzRst reseter && gamemodenoise rotation);
+
+always assume {
+    !(isscoremode gamemode     && isradarmode gamemode);
+    !(isradarmode gamemode     && iscockpitmode gamemode);
+    !(iscockpitmode gamemode   && isscoremode gamemode);
+    !(lt rotation (neg gamemodeswitch()) && gt rotation gamemodeswitch());
+} 
+
+always guarantee {
+    [prescaler <- incPrescale prescaler]; 
+    [reseter <- incReset reseter];
+
+    isscoremode gamemode && lt rotation  (neg gamemodeswitch()) || isradarmode gamemode && gt rotation gamemodeswitch() <-> COCKPITMODE;
+    iscockpitmode gamemode && lt rotation (neg gamemodeswitch()) <-> RADARMODE;
+    iscockpitmode gamemode && gt rotation gamemodeswitch()       <-> SCOREMODE;
+    
+    RESET_CONDITION <-> [rotation <- zero()];
+    !RESET_CONDITION && eqzPre prescaler && !(gyronoise gyroy) <-> [rotation <- addrotation rotation gyrocorrection() gyroy];
+}

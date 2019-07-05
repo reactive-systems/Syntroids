@@ -1,0 +1,18 @@
+/**** SPI-read-clock specification ****
+    Description:
+        Serial Clock, clocks with each state (counter) change, inactive in state 0 and > 34 and therefore high
+    Inputs:
+        "counter", counter from SPIReadManag module
+    Outputs:
+        "spc", spi clock
+    Predicates:
+        "isEven", isEven not i7 ;)
+        "lt", "eqz", standard compare predicates
+    Constants:
+        "thirtyfour", on read we clock 16 full cycles (2-33; high on uneven)
+*/
+
+always guarantee {
+    (!(isEven counter) || gt counter thirtyfour() || eqz counter) <-> [spc <- high()];
+    !(!(isEven counter) || gt counter thirtyfour() || eqz counter) <-> [spc <- low()];
+}

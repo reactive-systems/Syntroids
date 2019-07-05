@@ -1,0 +1,36 @@
+/**** RotationCalculator specification ****
+    Description:
+       This module calculates the rotation of the player form the gyroscope data and the gamememode
+    Inputs:
+        - "gyrox"
+        - "gyroz" 
+        - "gamemode"
+    Outputs:
+        - "rotation"
+    Predicates:
+        - "gyronoise", test if gryroscope data is noise
+        - "is...mode", check if the given mode corresponds to the wanted mode
+    Functions:
+        - "addrotation", updates the rotation value, respecting direction, correction and size of the data
+        - "subrotation", updates the rotation value, respecting direction, correction and size of the data
+        - "scalerotation", scaledown the fine internalRotation to the right format of the outputed rotation
+    Constants:
+        - "roationcaluclatorprescaler", indicates the prescaler range and should be 750
+        - "gyrocorrection", correctionvalue of the gyrosocop
+*/
+
+always assume {
+    !(isscoremode gamemode     && isradarmode gamemode);
+    !(isradarmode gamemode     && iscockpitmode gamemode);
+    !(iscockpitmode gamemode   && isscoremode gamemode);
+} 
+
+always guarantee {
+    [prescaler <- incmod prescaler roationcaluclatorprescaler()];
+    eqz prescaler && !gyronoise gyroz && isscoremode gamemode     <-> [internalRotation <- subrotation internalRotation gyrocorrection() gyroz];
+    eqz prescaler && !gyronoise gyroz && isradarmode gamemode     <-> [internalRotation <- addrotation internalRotation gyrocorrection() gyroz];
+    eqz prescaler && !gyronoise gyrox && iscockpitmode gamemode   <-> [internalRotation <- addrotation internalRotation gyrocorrection() gyrox];
+    [rotation <- scalerotation internalRotation]; 
+}
+
+

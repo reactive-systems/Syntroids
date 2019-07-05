@@ -1,0 +1,65 @@
+/**** Radarboard specification ****
+    Description:
+        This module calculates 
+     Inputs:
+        - "enemies", the data of all enmies
+        - "rotation",  rotation of the spaceship i.e the player
+        - "ramsineout", comunication intreface with the sine lookup-table
+        - "ramcosineout", comunication intreface with the cosine lookup-table
+    Outputs:
+        - "outx"
+        - "outy"
+        - "color"
+        - "ramreqsine" , comunication interface with the sine lookup-table
+        - "ramreqcosine", comunication interface with the cosine lookup-table
+    Predicates:
+        - "ismiddel" check if a point is in the middel square of screen
+        - "cartesianx" given a cosine value and a radius, it calculates the cartesian x-coordinate
+        - "cartesiany" given a sine value  and a radius, it calculates the cartesian y-coordinate 
+    Functions:
+        - "getenemyangle", this function extracts, given an enemy-index, the angle of an enemy 
+        - "getenemyradius", this function extracts, given an enemy-index, the radius of an enemy
+        - "getenemycolor", this function extracts, given an enemy-index, the color of an enemy
+    Constants:
+        - "enemycount", number of th enemies
+        - "sizex", "sizey", size of the screen
+        - "whitecolor", "blackcolor", color values of black and white
+*/
+
+ENEMY_COLOR     = getenemycolor enemies counter;
+ENEMY_RADIUS    = getenemyradius enemies counter;
+ENEMY_ANGLE     = getenemyangle enemies counter;
+
+REQUEST_SINE    = [ramreqsine <- sub ENEMY_ANGLE rotation];   
+REQUEST_COSINE  = [ramreqcosine <- sub ENEMY_ANGLE rotation];
+CARTESIAN_X     = cartesianx ramcosineout bufferdradius; 
+CARTESIAN_Y     = cartesiany ramsineout bufferdradius; 
+
+COUNTER_MAX     = eq counter (inc enemycount());
+INC_COUNTER     = [counter <- incmod counter (inc (inc enemycount()))]; 
+
+always guarantee {
+
+    // Cyclic counter
+    INC_COUNTER;
+    COUNTER_MAX                            <-> [xcoord <- inccoord xcoord];
+    COUNTER_MAX && eq xcoord (dec sizex()) <-> [ycoord <- inccoord ycoord];
+ 
+    // On every tick its nessesary   
+    [bufferdradius <- ENEMY_RADIUS];
+    [buffercolor   <- ENEMY_COLOR];
+    REQUEST_SINE;
+    REQUEST_COSINE; 
+   
+    !COUNTER_MAX -> ( 
+        eq xcoord CARTESIAN_X && eq ycoord CARTESIAN_Y <-> [tmpcolor <- buffercolor]
+    );
+    
+
+    COUNTER_MAX <-> [outx <- xcoord]; 
+    COUNTER_MAX <-> [outy <- ycoord];
+    COUNTER_MAX <-> [tmpcolor <- blackcolor()];
+
+    COUNTER_MAX &&  ismiddel xcoord ycoord <-> [color <- whitecolor()];
+    COUNTER_MAX && !ismiddel xcoord ycoord <-> [color <- tmpcolor];
+} 
