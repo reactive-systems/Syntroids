@@ -12,18 +12,18 @@ You need a TLSF-compatible LTL-synthesis tool. We used the following ones
 - [Strix](https://strix.model.in.tum.de/)
 - [Bosy](https://github.com/reactive-systems/bosy)
 
-Note that different sysnthesis tools might vary in how much recources they use and in the size of their outputed controll-flow-model.
+Note that different synthesis tools might vary in recource usage and the size of the outputed control flow model.
 
 ### Clash
-You need the Clash HDL used as the FRP-Framework, generating verlog code:
+You need the Clash HDL used as the FRP-Framework, generating verilog code:
 - https://github.com/clash-lang/clash-compiler
 
-Due to different version we recommend to do
+Due to active development of Clash, we recommend to
 `` git checkout fff460634d80db6f4add2b887cea22c2d937fc35``
 before building the compiler.
 
 ### Hardware
-You may not need the following tools depending if you want work on generated verilog code or if you want to rebuild the whole physical system.
+You may not need the following tools depending on whether you want work on generated verilog code or rebuild the whole physical system.
 
 #### Yosys
 You need the Yosys Open SYnthesis Suite to synthesize the generated verilog code.
