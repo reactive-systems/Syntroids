@@ -12,7 +12,7 @@ CLASHFILES  := $(patsubst %.tsl,%.hs,$(SOURCES))
 BCLASHFILES := $(addprefix bosy/,$(CLASHFILES))
 SCLASHFILES := $(addprefix strix/,$(CLASHFILES))
 
-################## Vorkonfigurierter Vorgang ###################
+##### tsltools #####
 
 check:
 	@ $(TSLCHECK) $(SOURCES)
@@ -20,11 +20,11 @@ check:
 %.tlsf : %.tsl
 	$(TSL2TLSF) $< > $@
 
-all_tlsf: $(TLSFFILES)
+tlsf: $(TLSFFILES)
 
 ##### strix #####
 
-strix: strixdir $(TLSFFILES) $(BASICFILES) $(AIGERFILES) $(SCLASHFILES) cp_strix
+strix: strixdir $(TLSFFILES) $(AIGERFILES) $(SCLASHFILES)
 	@echo $(SCLASHFILES)
 
 %.aag : %.tlsf
@@ -37,7 +37,7 @@ strixdir:
 
 ##### bosy #####
 
-bosy:bosydir $(TLSFFILES) $(JSONFILES) $(BOSYFILES) $(BCLASHFILES) cp_bosy
+bosy:bosydir $(TLSFFILES) $(BOSYFILES) $(BCLASHFILES)
 	@echo $(BCLASHFILES)
 
 %.bosy : %.tlsf
@@ -52,7 +52,7 @@ bosydir:
 ##### md5sum #####
 
 md5:
-	md5sum $(SOURCES)
+	@md5sum $(SOURCES)
 
 ##### clean #####
 
@@ -63,7 +63,7 @@ clean-bosy:
 	@rm -f -r bosy
 
 clean-strix:
-	@rm -f *.tlsf6
+	@rm -f *.tlsf
 	@rm -f *.aag
 	@rm -f $(SCLASHFILES)
 	@rm -f -r strix
