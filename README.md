@@ -1,4 +1,4 @@
-# Synthroids
+# Syntroids
 A [game](https://www.react.uni-saarland.de/publications/GHKF19.pdf) synthesized for FPGAs from [Temporal Stream Logic](https://www.react.uni-saarland.de/publications/FKPS19a.pdf)
 
 ## Requirements
