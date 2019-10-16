@@ -49,3 +49,5 @@ We include a [Makefile](src/specifications/Makefile), be sure to configure a [bu
 - `make strix/<filename>.hs` generates corresponding Clash code, plus the above if not already synthesized
 - `make <filename>.bosy` synthsizes the specification `<filename>.tsl` using bosy
 - `make bosy/<filename>.hs` generates corresponding Clash code, plus the above if not already synthesized
+
+After acquiring a `.hs` file for every specification, copy them to the [clash](src/clash) folder. You can then compile the game to Verilog code using a simple `make`.
