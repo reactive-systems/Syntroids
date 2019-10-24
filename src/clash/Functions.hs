@@ -95,27 +95,6 @@ startradius = 0xFF
 
 ----------------- GAMERELATED FUNCTIONS --------------------
 
-coordcount x y = resize x + 32 * resize y
-
-
-isDigit (d :: Unsigned 4) x y = seg_1 || seg_2 || seg_3 || seg_4 || seg_5 || seg_6 || seg_7 
-    where
-        seg_1 = (d == 0 || d == 2 || d == 3 || d == 5 || d == 6 || d == 7 || d == 8 || d == 9) && y == 28 && x > 2 && x < 14
-        seg_2 = (d == 0 || d == 4 || d == 5 || d == 6 || d == 8 || d == 9) && x == 13 && y < 29 && y > 14
-        seg_3 = (d == 0 || d == 2 || d == 6 || d == 8) && x == 13 && y < 16 && y > 2
-        seg_4 = (d == 0 || d == 2 || d == 3 || d == 5 || d == 6 || d == 8 || d == 9) && y == 3 && x > 2 && x < 14
-        seg_5 = (d == 0 || d == 1 || d == 3 || d == 4 || d == 5 || d == 6 || d == 7 || d == 8 || d == 9) && x ==3 && y < 16 && y > 2
-        seg_6 = (d == 0 || d == 1 || d == 2 || d == 3 || d == 4 || d == 7 || d == 8 || d == 9) && x == 3 && y < 29 && y > 14
-        seg_7 = (d == 2 || d == 3 || d == 4 || d == 5 || d == 6 || d == 8 || d == 9)  && y == 15 && x > 2 && x < 15
-    
-
-isScoreNumber score x y = isDigit firstDigit x y || isDigit secondDigit (x + 16) y
-    where
-        firstDigit =   resize $ score `mod` 10 
-        secondDigit =  resize $ score `div` 10
-
-
-
 isscoremode Score_Mode  = True
 isscoremode _           = False
 
